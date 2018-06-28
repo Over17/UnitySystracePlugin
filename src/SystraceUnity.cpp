@@ -18,7 +18,7 @@ static void* libandroid;
 
 static void UNITY_INTERFACE_API SystraceEventCallback(const UnityProfilerMarkerDesc* eventDesc, UnityProfilerMarkerEventType eventType, unsigned short eventDataCount, const UnityProfilerMarkerData* eventData, void* userData)
 {
-    if (ATrace_isEnabled && !ATrace_isEnabled())
+    if (!ATrace_isEnabled || !ATrace_isEnabled())
         return;
 
     switch (eventType)
