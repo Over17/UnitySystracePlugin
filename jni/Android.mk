@@ -5,5 +5,6 @@ LOCAL_CFLAGS    := -Werror
 
 LOCAL_SRC_FILES := src/SystraceUnity.cpp
 LOCAL_LDLIBS    += -landroid
+LOCAL_LDLIBS    += -llog
 
 include $(BUILD_SHARED_LIBRARY)

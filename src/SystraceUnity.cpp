@@ -1,4 +1,5 @@
 #include <dlfcn.h>
+#include <android/log.h>
 
 #include "IUnityInterface.h"
 #include "IUnityProfilerCallbacks.h"
@@ -46,6 +47,8 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
     libandroid = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
     if (libandroid != NULL)
     {
+        __android_log_print(ANDROID_LOG_INFO, "SystraceUnity", "Enabling Unity systrace integration plugin");
+
         ATrace_isEnabled = reinterpret_cast<fp_ATrace_isEnabled >(dlsym(libandroid, "ATrace_isEnabled"));
         ATrace_beginSection = reinterpret_cast<fp_ATrace_beginSection >(dlsym(libandroid, "ATrace_beginSection"));
         ATrace_endSection = reinterpret_cast<fp_ATrace_endSection >(dlsym(libandroid, "ATrace_endSection"));
