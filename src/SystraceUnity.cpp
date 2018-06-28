@@ -14,11 +14,11 @@ static fp_ATrace_beginSection ATrace_beginSection;
 static fp_ATrace_endSection ATrace_endSection;
 static fp_ATrace_isEnabled ATrace_isEnabled;
 
-static void* libandroid;
+static void* s_libandroid;
 
 static void UNITY_INTERFACE_API SystraceEventCallback(const UnityProfilerMarkerDesc* eventDesc, UnityProfilerMarkerEventType eventType, unsigned short eventDataCount, const UnityProfilerMarkerData* eventData, void* userData)
 {
-    if (!ATrace_isEnabled || !ATrace_isEnabled())
+    if (!ATrace_isEnabled())
         return;
 
     switch (eventType)
@@ -44,29 +44,41 @@ static void UNITY_INTERFACE_API SystraceCreateEventCallback(const UnityProfilerM
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
     // Doing dynamic linking because native trace API is supported only in Android M+
-    libandroid = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
-    if (libandroid == NULL)
+    s_libandroid = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
+    if (!s_libandroid)
     {
-        __android_log_print(ANDROID_LOG_INFO, "SystraceUnity", "Unity systrace integration plugin disabled: failed to load libandroid.so");
+        __android_log_print(ANDROID_LOG_WARN, "SystraceUnity", "Unity systrace integration plugin disabled: failed to load libandroid.so");
         return;
     }
 
-    __android_log_print(ANDROID_LOG_INFO, "SystraceUnity", "Enabling Unity systrace integration plugin");
+    ATrace_isEnabled = reinterpret_cast<fp_ATrace_isEnabled>(dlsym(s_libandroid, "ATrace_isEnabled"));
+    ATrace_beginSection = reinterpret_cast<fp_ATrace_beginSection>(dlsym(s_libandroid, "ATrace_beginSection"));
+    ATrace_endSection = reinterpret_cast<fp_ATrace_endSection>(dlsym(s_libandroid, "ATrace_endSection"));
 
-    ATrace_isEnabled = reinterpret_cast<fp_ATrace_isEnabled >(dlsym(libandroid, "ATrace_isEnabled"));
-    ATrace_beginSection = reinterpret_cast<fp_ATrace_beginSection >(dlsym(libandroid, "ATrace_beginSection"));
-    ATrace_endSection = reinterpret_cast<fp_ATrace_endSection >(dlsym(libandroid, "ATrace_endSection"));
+    if (ATrace_isEnabled && ATrace_beginSection && ATrace_endSection)
+    {
+        // Functions loaded correctly
+        __android_log_print(ANDROID_LOG_INFO, "SystraceUnity", "Enabling Unity systrace integration plugin");
 
-    s_UnityProfilerCallbacks = unityInterfaces->Get<IUnityProfilerCallbacks>();
-    s_UnityProfilerCallbacks->RegisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+        s_UnityProfilerCallbacks = unityInterfaces->Get<IUnityProfilerCallbacks>();
+        s_UnityProfilerCallbacks->RegisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+    }
+    else
+    {
+        __android_log_print(ANDROID_LOG_WARN, "SystraceUnity", "Unity systrace integration plugin disabled: failed to load native tracing API");
+    }
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
-    if (libandroid != NULL)
+    if (s_libandroid != NULL)
     {
-        s_UnityProfilerCallbacks->UnregisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
-        s_UnityProfilerCallbacks->UnregisterMarkerEventCallback(NULL, SystraceEventCallback, NULL);
-        dlclose(libandroid);
+        if (ATrace_isEnabled && ATrace_beginSection && ATrace_endSection)
+        {
+            s_UnityProfilerCallbacks->UnregisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+            s_UnityProfilerCallbacks->UnregisterMarkerEventCallback(NULL, SystraceEventCallback, NULL);
+        }
+
+        dlclose(s_libandroid);
     }
 }
