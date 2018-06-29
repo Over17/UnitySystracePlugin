@@ -41,6 +41,11 @@ static void UNITY_INTERFACE_API SystraceCreateEventCallback(const UnityProfilerM
     s_UnityProfilerCallbacks->RegisterMarkerEventCallback(eventDesc, SystraceEventCallback, NULL);
 }
 
+extern "C" void UNITY_INTERFACE_API InitSystraceUnityPlugin()
+{
+    //__android_log_print(ANDROID_LOG_DEBUG, "SystraceUnity", "Unity systrace integration plugin init finished");
+}
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
     // Doing dynamic linking because native trace API is supported only in Android M+
