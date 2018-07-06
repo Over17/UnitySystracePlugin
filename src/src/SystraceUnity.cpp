@@ -1,3 +1,4 @@
+#include <cstring>
 #include <dlfcn.h>
 #include <android/log.h>
 
@@ -15,6 +16,7 @@ static fp_ATrace_endSection ATrace_endSection;
 static fp_ATrace_isEnabled ATrace_isEnabled;
 
 static void* s_libandroid;
+const UnityProfilerMarkerDesc* s_DefaultMarkerDesc = NULL;
 
 static void UNITY_INTERFACE_API SystraceEventCallback(const UnityProfilerMarkerDesc* eventDesc, UnityProfilerMarkerEventType eventType, unsigned short eventDataCount, const UnityProfilerMarkerData* eventData, void* userData)
 {
@@ -25,7 +27,28 @@ static void UNITY_INTERFACE_API SystraceEventCallback(const UnityProfilerMarkerD
     {
         case kUnityProfilerMarkerEventTypeBegin:
         {
-            ATrace_beginSection(eventDesc->name);
+            if (eventDataCount > 1 && eventDesc == s_DefaultMarkerDesc)
+            {
+                // Profiler.Default marker emits UTF16 string as the second metadata parameter.
+                // For simplicity we slice UTF16 data to char.
+                uint32_t size = eventData[1].size;
+                const uint16_t* first = static_cast<const uint16_t*>(eventData[1].ptr);
+                const uint16_t* last = reinterpret_cast<const uint16_t*>(static_cast<const uint8_t*>(eventData[1].ptr) + size);
+                const int length = size / 2 + 1;
+                char newName[length];
+
+                for (int i = 0; first < last && i < length; ++first)
+                {
+                    newName[i++] = static_cast<char>(*first);
+                }
+                newName[length - 1] = 0;
+                ATrace_beginSection(newName);
+            }
+            else
+            {
+                ATrace_beginSection(eventDesc->name);
+            }
+
             break;
         }
         case kUnityProfilerMarkerEventTypeEnd:
@@ -38,6 +61,13 @@ static void UNITY_INTERFACE_API SystraceEventCallback(const UnityProfilerMarkerD
 
 static void UNITY_INTERFACE_API SystraceCreateEventCallback(const UnityProfilerMarkerDesc* eventDesc, void* userData)
 {
+    // Special handling for Profiler.Default markers
+    if (!s_DefaultMarkerDesc)
+    {
+        if (!strcmp(eventDesc->name, "Profiler.Default"))
+            s_DefaultMarkerDesc = eventDesc;
+    }
+
     s_UnityProfilerCallbacks->RegisterMarkerEventCallback(eventDesc, SystraceEventCallback, NULL);
 }
 
