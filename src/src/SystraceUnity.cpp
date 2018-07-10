@@ -15,6 +15,7 @@ static fp_ATrace_beginSection ATrace_beginSection;
 static fp_ATrace_endSection ATrace_endSection;
 static fp_ATrace_isEnabled ATrace_isEnabled;
 
+static bool s_isCapturing = false;
 static void* s_libandroid;
 const UnityProfilerMarkerDesc* s_DefaultMarkerDesc = NULL;
 
@@ -69,6 +70,23 @@ static void UNITY_INTERFACE_API SystraceCreateEventCallback(const UnityProfilerM
     }
 
     s_UnityProfilerCallbacks->RegisterMarkerEventCallback(eventDesc, SystraceEventCallback, NULL);
+}
+
+static void UNITY_INTERFACE_API SystraceFrameCallback(void* userData)
+{
+    bool isCapturing = ATrace_isEnabled();
+    if (isCapturing != s_isCapturing)
+    {
+        s_isCapturing = isCapturing;
+        if (isCapturing)
+        {
+
+        }
+        else
+        {
+
+        }
+    }
 }
 
 extern "C" void UNITY_INTERFACE_API InitSystraceUnityPlugin()
