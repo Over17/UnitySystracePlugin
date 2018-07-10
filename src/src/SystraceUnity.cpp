@@ -72,6 +72,9 @@ static void UNITY_INTERFACE_API SystraceCreateEventCallback(const UnityProfilerM
     s_UnityProfilerCallbacks->RegisterMarkerEventCallback(eventDesc, SystraceEventCallback, NULL);
 }
 
+// Every frame check if the status of systrace client has changed
+// If client was connected, register marker callback
+// If it was disconnecter, unregister the callbacks to reduce the overhead
 static void UNITY_INTERFACE_API SystraceFrameCallback(void* userData)
 {
     bool isCapturing = ATrace_isEnabled();
