@@ -80,11 +80,12 @@ static void UNITY_INTERFACE_API SystraceFrameCallback(void* userData)
         s_isCapturing = isCapturing;
         if (isCapturing)
         {
-
+            s_UnityProfilerCallbacks->RegisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
         }
         else
         {
-
+            s_UnityProfilerCallbacks->UnregisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+            s_UnityProfilerCallbacks->UnregisterMarkerEventCallback(NULL, SystraceEventCallback, NULL);
         }
     }
 }
@@ -114,7 +115,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
         __android_log_print(ANDROID_LOG_INFO, "SystraceUnity", "Enabling Unity systrace integration plugin");
 
         s_UnityProfilerCallbacks = unityInterfaces->Get<IUnityProfilerCallbacks>();
-        s_UnityProfilerCallbacks->RegisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+        s_UnityProfilerCallbacks->RegisterFrameCallback(SystraceFrameCallback, NULL);
     }
     else
     {
@@ -128,6 +129,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
     {
         if (ATrace_isEnabled && ATrace_beginSection && ATrace_endSection)
         {
+            s_UnityProfilerCallbacks->UnregisterFrameCallback(SystraceFrameCallback, NULL);
             s_UnityProfilerCallbacks->UnregisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
             s_UnityProfilerCallbacks->UnregisterMarkerEventCallback(NULL, SystraceEventCallback, NULL);
         }
