@@ -15,6 +15,7 @@ static fp_ATrace_beginSection ATrace_beginSection;
 static fp_ATrace_endSection ATrace_endSection;
 static fp_ATrace_isEnabled ATrace_isEnabled;
 
+static bool s_isCapturing = false;
 static void* s_libandroid;
 const UnityProfilerMarkerDesc* s_DefaultMarkerDesc = NULL;
 
@@ -71,6 +72,27 @@ static void UNITY_INTERFACE_API SystraceCreateEventCallback(const UnityProfilerM
     s_UnityProfilerCallbacks->RegisterMarkerEventCallback(eventDesc, SystraceEventCallback, NULL);
 }
 
+// Every frame check if the status of systrace client has changed
+// If client was connected, register marker callback
+// If it was disconnecter, unregister the callbacks to reduce the overhead
+static void UNITY_INTERFACE_API SystraceFrameCallback(void* userData)
+{
+    bool isCapturing = ATrace_isEnabled();
+    if (isCapturing != s_isCapturing)
+    {
+        s_isCapturing = isCapturing;
+        if (isCapturing)
+        {
+            s_UnityProfilerCallbacks->RegisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+        }
+        else
+        {
+            s_UnityProfilerCallbacks->UnregisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+            s_UnityProfilerCallbacks->UnregisterMarkerEventCallback(NULL, SystraceEventCallback, NULL);
+        }
+    }
+}
+
 extern "C" void UNITY_INTERFACE_API InitSystraceUnityPlugin()
 {
     //__android_log_print(ANDROID_LOG_DEBUG, "SystraceUnity", "Unity systrace integration plugin init finished");
@@ -96,7 +118,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
         __android_log_print(ANDROID_LOG_INFO, "SystraceUnity", "Enabling Unity systrace integration plugin");
 
         s_UnityProfilerCallbacks = unityInterfaces->Get<IUnityProfilerCallbacks>();
-        s_UnityProfilerCallbacks->RegisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
+        s_UnityProfilerCallbacks->RegisterFrameCallback(SystraceFrameCallback, NULL);
     }
     else
     {
@@ -110,6 +132,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
     {
         if (ATrace_isEnabled && ATrace_beginSection && ATrace_endSection)
         {
+            s_UnityProfilerCallbacks->UnregisterFrameCallback(SystraceFrameCallback, NULL);
             s_UnityProfilerCallbacks->UnregisterCreateMarkerCallback(SystraceCreateEventCallback, NULL);
             s_UnityProfilerCallbacks->UnregisterMarkerEventCallback(NULL, SystraceEventCallback, NULL);
         }
