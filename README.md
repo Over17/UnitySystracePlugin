@@ -15,11 +15,11 @@ Few comments on the implementation:
 
 ## Usage
 1.	Copy the contents of `Assets` directory to your project (it will be easier if you retain the path, then the plugin importer will set CPU architecture for the .so's correctly)
-2.	Attach the `Assets\Scripts\SystracePlugin.cs` script to a game object of your choice in your first scene to make sure the plugin is loaded as early as possible
+2.	Attach the `Assets/Scripts/SystracePlugin.cs` script to a game object of your choice in your first scene to make sure the plugin is loaded as early as possible
 3.	Enjoy
 
 ## How to Build
-Run `ndk-build` in src/ directory of the repo. Grab the libraries in src/libs/
+Run `ndk-build` in `src/` directory of the repo. Grab the libraries in `src/libs/`
 
 ## Useful Links
 -	https://developer.android.com/studio/command-line/systrace
