@@ -24,3 +24,8 @@ Run `ndk-build` in `src/` directory of the repo. Grab the libraries in `src/libs
 ## Useful Links
 -	https://developer.android.com/studio/command-line/systrace
 -	https://developer.android.com/ndk/reference/group/tracing
+
+## License
+Licensed under Apache 2.0.
+
+Unity Native Plugin API headers licensed under Unity Companion License, please see the header contents for details.
