@@ -4,13 +4,15 @@
 Unity profiler has a nice timeline view with named sections. It may be very helpful to have these sections displayed on a system-wide trace collected from an Android device using systrace tool, as it gives information about scheduling, CPU status, other processes running in the system etc.
 In version 2018.2, Unity introduced a profiler native plugin API; used together with Android tracing API, it allows to develop an integration plugin.
 
+**IMPORTANT NOTE**: In Unity 2019.1, native systrace support has been introduced (with same functionality as this plugin). It means that starting from 2019.1, there is no need to use this plugin - everything should just work out of the box.
+
 Few comments on the implementation:
 -	Android tracing API works on Marshmallow and later; but since Unity supports older devices, I used dynamic linking. On older devices, a warning is printed, and the Unity profiler integration is disabled.
 -	To load a native plugin in Android, Unity requires a P/Invoke call to an imported native method. Because of this a script was added; make sure to attach it to a game object in your scene!
 -	Due to optimization (the plugin checks if systrace is connected every frame, and if it is - registers callbacks for profiler markers; if no systrace is connected - no callbacks are happening for every profiler marker) Unity markers can show up from the next frame after starting the systrace capture.
 
 ## System Requirements
--	Unity 2018.2 or later
+-	Unity 2018.2 or later (NOTE: systrace support is integrated into Unity 2019.1, so starting from this version there is no need to use this plugin)
 -	Android device with Android 6.0 Marshmallow or later
 
 ## Usage
